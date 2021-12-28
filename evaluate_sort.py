@@ -33,30 +33,28 @@ def main(args):
     for i in range(len(test_set)):
         if i % 100 == 0:
             print("Evaluating image {} of {}".format(i, len(test_set)))
+
         # ground truth
         img, target = test_set[i]
         gt_boxes = target['boxes'].cpu().detach().numpy()
         gt_labels = target['labels'].cpu().detach().numpy()
-        gt_area = target['area'].cpu().detach().numpy()
-
 
         # new tracker
-        sort = Sort(max_age=5, min_hits=6)
+        sort = Sort()
 
-        j = 0
         identities = set()
         half_width = int(img.shape[2]/2)
-        min_area = 0
-        mask_half_width = 35
+        border_dist = 70
+        border = [half_width - int(border_dist/2), half_width + int(border_dist/2)]
+        offset = -border[1]
+        stride = 5
 
-        while j*5 < img.shape[2] + mask_half_width:
-            # mask image
-            img_masked = torchvision.transforms.functional.affine(img, 0, [j*5 - half_width - mask_half_width,0], 1, 0)
-            img_masked[:,:,:half_width - mask_half_width ] = 0
-            img_masked[:,:, half_width + mask_half_width:] = 0
+        while offset < border[1]:
+            # translate image
+            img_affine = torchvision.transforms.functional.affine(img, 0, [offset,0], 1, 0)
 
             # NN predictions
-            predictions = model([img_masked.to(device)])
+            predictions = model([img_affine.to(device)])
             pred_boxes = predictions[0]['boxes'].cpu().detach().numpy()
             pred_labels = predictions[0]['labels'].cpu().detach().numpy()
             pred_scores = predictions[0]['scores'].cpu().detach().numpy()
@@ -70,40 +68,55 @@ def main(args):
                 x1, y1, x2, y2 = [int(v) for v in pred_boxes[index]]
                 score = pred_scores[index]
                 area = (x2 - x1) * (y2 - y1)
-                if score > 0.1 and area > min_area:
+                if score > 0.1:
                     dets.append([x1,y1,x2,y2,score])
 
+            # update sort
             if len(dets):
                 tracks = sort.update(np.array(dets))
             else:
                 tracks = sort.update(np.empty((0, 5)))
 
+            # add identities within user-defined borders
+            for track in tracks:
+                x1, y1, x2, y2 = [int(v) for v in track[:4]]
+                cx = (x1 + x2)/2
+                identity = track[4]
+                if cx > border[0] and cx < border[1]:
+                    identities.add(identity)
+
             # display
             if args.display:
-                frame = img_masked.cpu().detach().numpy()
+                frame = img_affine.cpu().detach().numpy()
                 frame = np.moveaxis(frame, 0, 2)
                 frame = frame[:,:,::-1].copy() - 0.35
-                # for box in gt_boxes:
-                #     x1, y1, x2, y2 = [int(v) for v in box]
-                #     cv2.rectangle(frame, (x1,y1), (x2,y2), (0.75,0.25,1), 1)
+                cv2.line(frame, (border[0], 0), (border[0], frame.shape[0]), (0,0,255), 2)
+                cv2.line(frame, (border[1], 0), (border[1], frame.shape[0]), (0,0,255), 2)
+                for box in gt_boxes:
+                    x1, y1, x2, y2 = [int(v) for v in box]
+                    x1 += offset
+                    x2 += offset
+                    cv2.rectangle(frame, (x1,y1), (x2,y2), (0.75,0.25,1), 1)
                 for track in tracks:
                     x1, y1, x2, y2 = [int(v) for v in track[:4]]
-                    identity = track[4]
-                    identities.add(identity)
+                    identity = int(track[4])
+                    cv2.putText(frame, str(identity), (x1,y1+12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,1,0), 1)
                     cv2.rectangle(frame, (x1,y1), (x2,y2), (0,1,0), 1)
+                cv2.putText(frame, "apple count: {}/{}".format(len(identities), len(gt_boxes)), (0,25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
                 cv2.imshow('frame', frame)
                 cv2.waitKey(1)
 
-            j += 1
+            offset += stride
 
-        actual = np.sum(gt_area > min_area)
+        actual = len(gt_boxes)
         counted = len(identities)
         results.append((counted - actual)/actual)
         if args.display:
             print(results[-1])
             cv2.waitKey(0)
 
-    print('mean:', np.mean(np.absolute(results)))
+    print('mean error:', np.mean(results))
+    print('mean abs error:', np.mean(np.absolute(results)))
     print('std:', np.std(results))
 
 
