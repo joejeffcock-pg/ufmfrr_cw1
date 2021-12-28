@@ -3,8 +3,7 @@ Reference: https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
 """
 import argparse
 import torch
-import torchvision
-from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
+from model import get_model_faster_rcnn
 import utilities.utils as utils
 from utilities.engine import train_one_epoch, evaluate
 from data.minne_apple_dataset import MinneAppleDataset
@@ -43,9 +42,7 @@ def main(args):
         collate_fn=utils.collate_fn)
 
     # create model and load it onto device
-    model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
-    in_features = model.roi_heads.box_predictor.cls_score.in_features
-    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+    model = get_model_faster_rcnn(num_classes)
     model.to(device)
 
     # construct an optimizer
