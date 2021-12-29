@@ -23,9 +23,17 @@ def main(args):
 
     # our dataset has two classes only - background and APPLE
     num_classes = 2
+
     # use our dataset and defined transformations
-    dataset = MinneAppleDataset(args.data_path, get_transform(train=True))
-    dataset_test = MinneAppleDataset(args.data_path, get_transform(train=False))
+    if args.dataset == "MinneApple":
+        dataset = MinneAppleDataset(args.data_path, get_transform(train=True))
+        dataset_test = MinneAppleDataset(args.data_path, get_transform(train=False))
+    elif args.dataset == "COCO":
+        print("TODO: implement COCO Dataset object")
+        # dataset = CocoDataset(args.data_path)
+        # dataset_test = CocoDataset(args.data_path)
+    else:
+        raise ValueError("Dataset: {} is not supported".format(args.dataset))
 
     # split the dataset in train and test set
     indices = torch.randperm(len(dataset)).tolist()
@@ -70,5 +78,6 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("data_path", help="path to image data")
+    parser.add_argument("--dataset", dest="dataset", default="MinneApple", help="Choice of dataset: MinneApple/COCO")
     args = parser.parse_args()
     main(args)
