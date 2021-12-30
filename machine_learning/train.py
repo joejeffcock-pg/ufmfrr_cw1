@@ -26,19 +26,14 @@ def main(args):
 
     # use our dataset and defined transformations
     if args.dataset == "MinneApple":
-        dataset = MinneAppleDataset(args.data_path, get_transform(train=True))
-        dataset_test = MinneAppleDataset(args.data_path, get_transform(train=False))
+        dataset = MinneAppleDataset(args.train_data_path, get_transform(train=True))
+        dataset_test = MinneAppleDataset(args.val_data_path, get_transform(train=False))
     elif args.dataset == "COCO":
         print("TODO: implement COCO Dataset object")
         # dataset = CocoDataset(args.data_path)
         # dataset_test = CocoDataset(args.data_path)
     else:
         raise ValueError("Dataset: {} is not supported".format(args.dataset))
-
-    # split the dataset in train and test set
-    indices = torch.randperm(len(dataset)).tolist()
-    dataset = torch.utils.data.Subset(dataset, indices[:-50])
-    dataset_test = torch.utils.data.Subset(dataset_test, indices[-50:])
 
     # define training and validation data loaders
     data_loader = torch.utils.data.DataLoader(
@@ -77,7 +72,8 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("data_path", help="path to image data")
+    parser.add_argument("train_data_path", help="path to training data")
+    parser.add_argument("val_data_path", help="path to validation data")
     parser.add_argument("--dataset", dest="dataset", default="MinneApple", help="Choice of dataset: MinneApple/COCO")
     args = parser.parse_args()
     main(args)
