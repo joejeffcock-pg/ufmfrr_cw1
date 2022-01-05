@@ -7,8 +7,11 @@ from model import get_model_faster_rcnn
 import utilities.utils as utils
 from utilities.engine import train_one_epoch, evaluate
 from data.minne_apple_dataset import MinneAppleDataset
+from data.coco_dataset import CocoDataset
+from data.coco_dataset import get_fiftyone_dataset
 
 import utilities.transforms as T
+
 
 def get_transform(train):
     transforms = []
@@ -16,6 +19,7 @@ def get_transform(train):
     if train:
         transforms.append(T.RandomHorizontalFlip(0.5))
     return T.Compose(transforms)
+
 
 def main(args):
     # train on the GPU or on the CPU, if a GPU is not available
@@ -29,9 +33,12 @@ def main(args):
         dataset = MinneAppleDataset(args.train_data_path, get_transform(train=True))
         dataset_test = MinneAppleDataset(args.val_data_path, get_transform(train=False))
     elif args.dataset == "COCO":
-        print("TODO: implement COCO Dataset object")
-        # dataset = CocoDataset(args.data_path)
-        # dataset_test = CocoDataset(args.data_path)
+        # first build the 'fiftyone' datasets
+        dataset_51 = get_fiftyone_dataset(args.train_data_path)
+        dataset_test_51 = get_fiftyone_dataset(args.val_data_path)
+
+        dataset = CocoDataset(dataset_51, get_transform(train=True))
+        dataset_test = CocoDataset(dataset_test_51, get_transform(train=False))
     else:
         raise ValueError("Dataset: {} is not supported".format(args.dataset))
 
@@ -70,10 +77,12 @@ def main(args):
 
     torch.save(model.state_dict(), './weights.pth')
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("train_data_path", help="path to training data")
     parser.add_argument("val_data_path", help="path to validation data")
-    parser.add_argument("--dataset", dest="dataset", default="MinneApple", help="Choice of dataset: MinneApple/COCO")
+    # parser.add_argument("--dataset", dest="dataset", default="MinneApple", help="Choice of dataset: MinneApple/COCO")
+    parser.add_argument("--dataset", dest="dataset", default="COCO", help="Choice of dataset: MinneApple/COCO")
     args = parser.parse_args()
     main(args)
