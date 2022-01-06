@@ -67,18 +67,23 @@ def main(args):
             print(metrics)
             frame = img.cpu().detach().numpy()
             frame = np.moveaxis(frame, 0, 2)
-            frame = frame[:,:,::-1].copy() - 0.35
+            frame = frame[:,:,::-1].copy()
             for box in gt_boxes:
                 x1, y1, x2, y2 = [int(v) for v in box]
-                cv2.rectangle(frame, (x1,y1), (x2,y2), (0.75,0.25,1), 1)
+                cv2.rectangle(frame, (x1,y1), (x2,y2), (0.75,0.25,1), 2)
             for box in pred_boxes:
                 x1, y1, x2, y2 = [int(v) for v in box]
-                cv2.rectangle(frame, (x1,y1), (x2,y2), (1,1,0), 1)
+                cv2.rectangle(frame, (x1,y1), (x2,y2), (1,1,0), 2)
             cv2.imshow('frame', frame)
             cv2.waitKey(0)
 
     counting_accuraccy = [metrics["Counting Accuracy"] for metrics in results]
-    print(np.mean(counting_accuraccy))
+    print("Average counting accuracy:", np.mean(counting_accuraccy))
+    tp = np.sum([metrics["TP"] for metrics in results])
+    fp = np.sum([metrics["FP"] for metrics in results])
+    fn = np.sum([metrics["FN"] for metrics in results])
+    total_metrics = compute_metrics(tp + fp, tp + fn, tp)
+    print("Total counting accuracy:", total_metrics["Counting Accuracy"])
 
 
 if __name__ == "__main__":
