@@ -71,17 +71,21 @@ def compute_metrics(no_pred: int, no_gt: int, no_matches: int):
     tp = no_matches
     fp = no_pred - no_matches
     fn = no_gt - no_matches
-    relative_error = abs((no_pred - no_gt)/float(no_gt))
+    error = (no_pred - no_gt)/float(no_gt)
+    relative_error = abs(error)
 
     metrics = {}
     metrics["TP"] = tp
     metrics["FP"] = fp
     metrics["FN"] = fn
-    metrics["Precision"] = tp/float(tp + fp) # equivalent to accuracy
+    if tp + fp == 0:
+        metrics["Precision"] = float('nan') # equivalent to accuracy
+    else:
+        metrics["Precision"] = tp/float(tp + fp) # equivalent to accuracy
     metrics["Recall"] = tp/float(tp + fn)
 
     # we define counting_accuracy as (1.0 - relative_error)
-    metrics["Relative Error"] = relative_error
+    metrics["Error"] = error
     metrics["Counting Accuracy"] = 1.0 - relative_error
 
     return metrics
