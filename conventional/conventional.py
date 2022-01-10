@@ -3,7 +3,7 @@ import cv2
 from scipy import ndimage # multidimensional image processing
 from skimage.color import rgb2hsv # image processing algorithms
 
-def conventional(image, thresholds):
+def conventional(image, thresholds, kernel_size=2, iterations=2):
   img = image
 
   # convert to HSV
@@ -22,9 +22,8 @@ def conventional(image, thresholds):
   gimg = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
 
   # opening
-  kernel = np.ones((2,2),np.uint8)
-  opening = cv2.morphologyEx(gimg, cv2.MORPH_OPEN, kernel, iterations=2)
-  # cv2.imshow('opening', opening)
+  kernel = np.ones((kernel_size, kernel_size),np.uint8)
+  opening = cv2.morphologyEx(gimg, cv2.MORPH_OPEN, kernel, iterations=iterations)
 
   labels, nlabels = ndimage.label(opening)  # Label features in an array. Any non-zero values in input are counted as features and zero values are considered the background.
   centroid = ndimage.center_of_mass(opening, labels, np.arange(nlabels) + 1 ) # calculate the center of mass of the values of an array at labels.

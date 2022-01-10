@@ -42,7 +42,7 @@ def main(args):
         img = img[:,:,::-1].copy() * 255
         img = img.astype(np.uint8)
 
-        predictions = conventional(img, hsv_thresholds)
+        predictions = conventional(img, hsv_thresholds, args.kernel_size, args.iterations)
 
         # compute metrics
         if len(predictions):
@@ -83,5 +83,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("data_path", help="path to image data")
     parser.add_argument("--display", action="store_true", help="path to model weights")
+    parser.add_argument("--kernel_size", type=int, default="2", help="size of opening kernel")
+    parser.add_argument("--iterations", type=int, default="2", help="iterations of opening for noise removal")
     args = parser.parse_args()
+    print("Applying conventional approach with kernel size {} and {} iterations".format(args.kernel_size, args.iterations))
     main(args)
