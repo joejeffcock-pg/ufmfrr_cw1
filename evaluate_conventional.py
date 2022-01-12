@@ -29,7 +29,7 @@ def main(args):
 
     results = []
     for i in range(len(test_set)):
-        if i % 100 == 0:
+        if i % 10 == 0:
             print("Evaluating image {} of {}".format(i, len(test_set)))
         # ground truth
         img, target = test_set[i]

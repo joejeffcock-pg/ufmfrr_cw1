@@ -8,6 +8,8 @@ from eval.evaluate import match_predictions_to_ground_truths, compute_metrics
 
 import numpy as np
 import cv2
+import pickle
+import time
 
 def get_transform(train):
     transforms = []
@@ -29,7 +31,7 @@ def main(args):
 
     results = []
     for i in range(len(test_set)):
-        if i % 100 == 0:
+        if i % 10 == 0:
             print("Evaluating image {} of {}".format(i, len(test_set)))
         # ground truth
         img, target = test_set[i]
@@ -84,6 +86,12 @@ def main(args):
     fn = np.sum([metrics["FN"] for metrics in results])
     total_metrics = compute_metrics(tp + fp, tp + fn, tp)
     print("Total counting accuracy:", total_metrics["Counting Accuracy"])
+
+    filename = 'results_{}.pkl'.format(time.strftime("%Y-%m-%dT%H:%M:%S"))
+    with open(filename, 'wb') as f:
+        pickle.dump(results, f)
+    print('Results written to file {}'.format(filename))
+
 
 
 if __name__ == "__main__":

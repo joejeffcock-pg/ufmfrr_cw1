@@ -10,6 +10,8 @@ from PIL import Image
 
 import numpy as np
 import cv2
+import pickle
+import time
 
 def get_transform(train):
     transforms = []
@@ -31,7 +33,7 @@ def main(args):
 
     results = []
     for i in range(len(test_set)):
-        if i % 100 == 0:
+        if i % 10 == 0:
             print("Evaluating image {} of {}".format(i, len(test_set)))
 
         # ground truth
@@ -108,16 +110,25 @@ def main(args):
 
             offset += stride
 
-        actual = len(gt_boxes)
-        counted = len(identities)
-        results.append((counted - actual)/actual)
+        metrics = compute_metrics(len(identities), len(gt_boxes), 0)
+        results.append(metrics)
+
         if args.display:
-            print(results[-1])
+            print(metrics)
             cv2.waitKey(0)
 
-    print('mean error:', np.mean(results))
-    print('mean abs error:', np.mean(np.absolute(results)))
-    print('std:', np.std(results))
+    counting_accuraccy = [metrics["Counting Accuracy"] for metrics in results]
+    print("Average counting accuracy:", np.mean(counting_accuraccy))
+    tp = np.sum([metrics["TP"] for metrics in results])
+    fp = np.sum([metrics["FP"] for metrics in results])
+    fn = np.sum([metrics["FN"] for metrics in results])
+    total_metrics = compute_metrics(tp + fp, tp + fn, tp)
+    print("Total counting accuracy:", total_metrics["Counting Accuracy"])
+
+    filename = 'results_{}.pkl'.format(time.strftime("%Y-%m-%dT%H:%M:%S"))
+    with open(filename, 'wb') as f:
+        pickle.dump(results, f)
+    print('Results written to file {}'.format(filename))
 
 
 if __name__ == "__main__":
