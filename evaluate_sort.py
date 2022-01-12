@@ -46,7 +46,7 @@ def main(args):
 
         identities = set()
         half_width = int(img.shape[2]/2)
-        border_dist = 70
+        border_dist = args.border_size
         border = [half_width - int(border_dist/2), half_width + int(border_dist/2)]
         offset = -border[1]
         stride = 5
@@ -91,19 +91,19 @@ def main(args):
             if args.display:
                 frame = img_affine.cpu().detach().numpy()
                 frame = np.moveaxis(frame, 0, 2)
-                frame = frame[:,:,::-1].copy() - 0.35
+                frame = frame[:,:,::-1].copy()
                 cv2.line(frame, (border[0], 0), (border[0], frame.shape[0]), (0,0,255), 2)
                 cv2.line(frame, (border[1], 0), (border[1], frame.shape[0]), (0,0,255), 2)
                 for box in gt_boxes:
                     x1, y1, x2, y2 = [int(v) for v in box]
                     x1 += offset
                     x2 += offset
-                    cv2.rectangle(frame, (x1,y1), (x2,y2), (0.75,0.25,1), 1)
+                    cv2.rectangle(frame, (x1,y1), (x2,y2), (0.75,0.25,1), 2)
                 for track in tracks:
                     x1, y1, x2, y2 = [int(v) for v in track[:4]]
                     identity = int(track[4])
-                    cv2.putText(frame, str(identity), (x1,y1+12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,1,0), 1)
-                    cv2.rectangle(frame, (x1,y1), (x2,y2), (0,1,0), 1)
+                    cv2.putText(frame, str(identity), (x1,y1+12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (1,1,0), 1)
+                    cv2.rectangle(frame, (x1,y1), (x2,y2), (1,1,0), 2)
                 cv2.putText(frame, "apple count: {}/{}".format(len(identities), len(gt_boxes)), (0,25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
                 cv2.imshow('frame', frame)
                 cv2.waitKey(1)
@@ -136,5 +136,7 @@ if __name__ == "__main__":
     parser.add_argument("data_path", help="path to image data")
     parser.add_argument("weights_path", help="path to model weights")
     parser.add_argument("--display", action="store_true", help="path to model weights")
+    parser.add_argument("--border_size", type=int, default="20", help="area under which counting takes place")
     args = parser.parse_args()
+    print("Applying MOT with Faster R-CNN weights {} and border size {}".format(args.weights_path, args.border_size))
     main(args)

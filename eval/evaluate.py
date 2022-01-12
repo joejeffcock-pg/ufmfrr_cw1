@@ -42,7 +42,7 @@ def dist_points_from_box_centres(points, boxes):
     centres = np.expand_dims(centres, 0)
     points = np.expand_dims(points, 1)
 
-    dist_matrix = np.linalg.norm(points - centres, axis=2)
+    dist_matrix = np.linalg.norm(points - centres, axis=2) # l2 distance
     return dist_matrix
 
 
